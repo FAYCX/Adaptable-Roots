@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Roots Visualization</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+      }
+      #sketch-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+      canvas {
+        display: block;
+      }
+      #instructions {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: white;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 10px;
+        border-radius: 5px;
+        font-family: Arial, sans-serif;
+        font-size: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="sketch-container">
+      <div id="instructions">
+        Show any color you could find near your computer, and show it to the camera. Hold it for a while, see how your roots adapt to the environment you've created.
+      </div>
+    </main>
+    <script>
+      let capture;
+      let rootCount = 10;
+
+      function setup() {
+        let w = windowWidth;
+        let h = windowHeight;
+
+        capture = createCapture(
+          {
+            audio: false,
+            video: {
+              width: w,
+              height: h,
+            },
+          },
+          function () {
+            console.log("capture ready.");
+          }
+        );
+
+        capture.size(w, h);
+        createCanvas(w, h);
+        capture.hide();
+      }
+
+      function calculateAverageColor() {
+        capture.loadPixels();
+
+        let totalColor = [0, 0, 0];
+        let totalPixels = 0;
+
+        for (let y = 0; y < capture.height; y++) {
+          for (let x = 0; x < capture.width; x++) {
+            let index = (x + y * capture.width) * 4;
+            let r = capture.pixels[index];
+            let g = capture.pixels[index + 1];
+            let b = capture.pixels[index + 2];
+
+            totalColor[0] += r;
+            totalColor[1] += g;
+            totalColor[2] += b;
+
+            totalPixels++;
+          }
+        }
+
+        let avgColor = [
+          totalColor[0] / totalPixels,
+          totalColor[1] / totalPixels,
+          totalColor[2] / totalPixels,
+        ];
+
+        return avgColor;
+      }
+
+      function draw() {
+        let avgColor = calculateAverageColor();
+        
+        for (let i = 0; i < rootCount; i++) {
+          let startX = random(width);
+          let startY = random(height);
+
+          drawRoot(startX, startY, avgColor);
+        }
+      }
+
+      function drawRoot(x, y, color) {
+        stroke(color);
+        strokeWeight(1);
+
+        for (let i = 0; i < 100; i++) {
+          point(x, y);
+
+          let angle = noise(x * 0.005, y * 0.005) * TWO_PI * 5;
+          let length = random(6);
+
+          x += cos(angle) * length;
+          y += sin(angle) * length;
+
+          if (x < 0 || x >= width || y < 0 || y >= height) {
+            break;
+          }
+        }
+      }
+    </script>
+  </body>
+</html>
